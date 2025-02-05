@@ -1,4 +1,17 @@
 import pygame
+import sys
+import os
+
+# Функция для получения пути к ресурсам
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in sys._MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 # Инициализация Pygame
 pygame.init()
@@ -10,7 +23,7 @@ screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("PGG")
 
 # Загрузка изображения персонажа
-player_image = pygame.image.load('assets/player.png')
+player_image = pygame.image.load(resource_path('assets/player.png'))
 player_rect = player_image.get_rect()
 player_rect.topleft = (100, 100)
 
