@@ -25,8 +25,15 @@ class GameEngine:
         self.running = True
         self.clock = pygame.time.Clock()
 
-        self.time_limit_ms = 60_000
-        self.restart_level()
+        self.default_time_limit_ms = 60_000
+        self.level_paths = [
+            self.resource_path('data/levels/level_1.json'),
+            self.resource_path('data/levels/level_2.json'),
+            self.resource_path('data/levels/level_3.json'),
+        ]
+        self.current_level_index = 0
+
+        self.load_level(self.current_level_index)
 
     @staticmethod
     def resource_path(relative_path):
@@ -38,20 +45,41 @@ class GameEngine:
 
         return os.path.join(base_path, relative_path)
 
-    def restart_level(self):
-        self.level = Level(self.screen_width, self.screen_height)
+    def load_level(self, level_index):
+        if not (0 <= level_index < len(self.level_paths)):
+            raise IndexError(f"Level index out of range: {level_index}")
+
+        self.current_level_index = level_index
+        level_path = self.level_paths[self.current_level_index]
+        self.level = Level.from_json_file(level_path, self.screen_width, self.screen_height)
+
+        self.player.set_start_position(self.level.player_start)
         self.player.reset()
+
         self.score = 0
-        self.remaining_time_ms = self.time_limit_ms
+        self.remaining_time_ms = self.default_time_limit_ms
         self.game_state = "playing"
+
+    def restart_level(self):
+        self.load_level(self.current_level_index)
+
+    def load_next_level(self):
+        if self.current_level_index + 1 < len(self.level_paths):
+            self.load_level(self.current_level_index + 1)
 
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_r:
-                if self.game_state in ("victory", "game_over"):
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_r and self.game_state in ("victory", "game_over"):
                     self.restart_level()
+                elif event.key == pygame.K_n and self.game_state == "victory":
+                    self.load_next_level()
+                elif pygame.K_1 <= event.key <= pygame.K_9:
+                    requested_level = event.key - pygame.K_1
+                    if requested_level < len(self.level_paths):
+                        self.load_level(requested_level)
 
     def update(self, dt_ms):
         if self.game_state != "playing":
@@ -85,6 +113,7 @@ class GameEngine:
             return
 
         print(
+            f"Level: {self.current_level_index + 1}, "
             f"Velocity Y: {self.player.velocity_y}, "
             f"On Ground: {self.player.on_ground}, "
             f"On Air Platform: {self.player.on_air_platform}, "
@@ -99,9 +128,13 @@ class GameEngine:
         self.player.draw(self.screen)
         self.ui.draw_score(self.screen, self.score)
         self.ui.draw_timer(self.screen, self.remaining_time_ms)
+        self.ui.draw_level(self.screen, self.current_level_index + 1, len(self.level_paths))
 
         if self.game_state == "victory":
-            self.ui.draw_end_screen(self.screen, "Victory!", "Press R to restart")
+            subtitle = "Press R to restart"
+            if self.current_level_index + 1 < len(self.level_paths):
+                subtitle += " | Press N for next level"
+            self.ui.draw_end_screen(self.screen, "Victory!", subtitle)
         elif self.game_state == "game_over":
             self.ui.draw_end_screen(self.screen, "Game Over", "Press R to restart")
 

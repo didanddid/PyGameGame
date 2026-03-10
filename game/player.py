@@ -21,6 +21,9 @@ class Player:
         self.jump_buffer_timer_ms = 0
         self.prev_jump_pressed = False
 
+    def set_start_position(self, start_pos):
+        self.start_pos = tuple(start_pos)
+
     def reset(self):
         self.rect.topleft = self.start_pos
         self.velocity_y = 0

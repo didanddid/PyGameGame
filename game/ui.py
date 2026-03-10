@@ -15,6 +15,11 @@ class UI:
         text = self.font.render(f'Time: {seconds}', True, (255, 255, 255))
         screen.blit(text, (10, 45))
 
+
+    def draw_level(self, screen: pygame.Surface, current_level: int, total_levels: int):
+        text = self.font.render(f'Level: {current_level}/{total_levels}', True, (255, 255, 255))
+        screen.blit(text, (10, 80))
+
     def draw_end_screen(self, screen: pygame.Surface, title: str, subtitle: str):
         overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 170))
