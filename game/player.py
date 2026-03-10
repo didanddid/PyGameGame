@@ -20,6 +20,7 @@ class Player:
         self.coyote_timer_ms = 0
         self.jump_buffer_timer_ms = 0
         self.prev_jump_pressed = False
+        self.jump_triggered = False
 
     def set_start_position(self, start_pos):
         self.start_pos = tuple(start_pos)
@@ -32,6 +33,7 @@ class Player:
         self.coyote_timer_ms = 0
         self.jump_buffer_timer_ms = 0
         self.prev_jump_pressed = False
+        self.jump_triggered = False
 
     def handle_horizontal_input(self, keys):
         if keys[pygame.K_LEFT]:
@@ -40,6 +42,7 @@ class Player:
             self.rect.x += 5
 
     def process_jump_input(self, keys, dt_ms):
+        self.jump_triggered = False
         jump_pressed = keys[pygame.K_SPACE]
 
         if jump_pressed and not self.prev_jump_pressed:
@@ -62,6 +65,9 @@ class Player:
             self.on_air_platform = False
             self.coyote_timer_ms = 0
             self.jump_buffer_timer_ms = 0
+            self.jump_triggered = True
+            return True
+        return False
 
     def can_jump(self):
         return self.on_ground or self.on_air_platform or self.coyote_timer_ms > 0

@@ -19,11 +19,16 @@ class UI:
         text = self.font.render(f'Level: {current_level}/{total_levels}', True, (255, 255, 255))
         screen.blit(text, (10, 80))
 
+    def draw_audio_state(self, screen: pygame.Surface, muted: bool):
+        label = "Audio: Mute" if muted else "Audio: On"
+        text = self.font.render(label, True, (255, 255, 255))
+        screen.blit(text, (10, 115))
+
     def draw_menu_screen(self, screen: pygame.Surface):
-        self._draw_overlay(screen, "PGG", "Enter - Start | 1..9 - Select Level | Esc - Quit")
+        self._draw_overlay(screen, "PGG", "Enter - Start | 1..9 - Select Level | M - Mute | Esc - Quit")
 
     def draw_pause_screen(self, screen: pygame.Surface):
-        self._draw_overlay(screen, "Paused", "P/Esc - Resume | R - Restart Level")
+        self._draw_overlay(screen, "Paused", "P/Esc - Resume | R - Restart Level | M - Mute")
 
     def draw_end_screen(self, screen: pygame.Surface, title: str, subtitle: str):
         self._draw_overlay(screen, title, subtitle)

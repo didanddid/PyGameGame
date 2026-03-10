@@ -3,6 +3,7 @@ import sys
 
 import pygame
 
+from game.audio import AudioManager
 from game.level import Level
 from game.player import Player
 from game.ui import UI
@@ -22,6 +23,7 @@ class GameEngine:
         self.player = Player(player_image)
 
         self.ui = UI()
+        self.audio = AudioManager(self.resource_path)
         self.running = True
         self.clock = pygame.time.Clock()
 
@@ -88,6 +90,8 @@ class GameEngine:
                     self.restart_level()
                 elif event.key == pygame.K_n and self.game_state == "victory":
                     self.load_next_level()
+                elif event.key == pygame.K_m:
+                    self.audio.toggle_mute()
                 elif pygame.K_1 <= event.key <= pygame.K_9:
                     requested_level = event.key - pygame.K_1
                     if requested_level < len(self.level_paths):
@@ -100,10 +104,13 @@ class GameEngine:
         if self.game_state != "playing":
             return
 
+        previous_state = self.game_state
         keys = pygame.key.get_pressed()
 
         self.player.handle_horizontal_input(keys)
         self.player.process_jump_input(keys, dt_ms)
+        if self.player.jump_triggered:
+            self.audio.play('jump')
 
         self.level.update(dt_ms)
 
@@ -113,13 +120,21 @@ class GameEngine:
         self.player.refresh_grounding_timers()
         self.player.consume_buffered_jump()
 
-        self.score += self.player.collect_coins(self.level.coins)
+        collected = self.player.collect_coins(self.level.coins)
+        if collected:
+            self.audio.play('coin')
+        self.score += collected
+
         self.remaining_time_ms = max(0, self.remaining_time_ms - dt_ms)
 
         if self.level.hits_spike(self.player.rect):
             self.game_state = "game_over"
 
         self.update_game_state()
+
+        if previous_state == 'playing' and self.game_state in ('victory', 'game_over'):
+            self.audio.play(self.game_state)
+
         self.log_debug_state()
 
     def update_game_state(self):
@@ -138,7 +153,8 @@ class GameEngine:
             f"On Ground: {self.player.on_ground}, "
             f"On Air Platform: {self.player.on_air_platform}, "
             f"State: {self.game_state}, "
-            f"Time Left: {self.remaining_time_ms}"
+            f"Time Left: {self.remaining_time_ms}, "
+            f"Muted: {self.audio.muted}"
         )
 
     def render(self):
@@ -149,6 +165,7 @@ class GameEngine:
         self.ui.draw_score(self.screen, self.score)
         self.ui.draw_timer(self.screen, self.remaining_time_ms)
         self.ui.draw_level(self.screen, self.current_level_index + 1, len(self.level_paths))
+        self.ui.draw_audio_state(self.screen, self.audio.muted)
 
         if self.game_state == "menu":
             self.ui.draw_menu_screen(self.screen)
