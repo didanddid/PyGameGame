@@ -7,6 +7,7 @@ from game.audio import AudioManager
 from game.level import Level
 from game.player import Player
 from game.ui import UI
+from game.telemetry import TelemetryStore
 
 
 class GameEngine:
@@ -26,6 +27,7 @@ class GameEngine:
         self.audio = AudioManager(self.resource_path)
         self.running = True
         self.clock = pygame.time.Clock()
+        self.telemetry = TelemetryStore()
 
         self.default_time_limit_ms = 60_000
         self.level_paths = [
@@ -60,6 +62,7 @@ class GameEngine:
         self.player.reset()
 
         self.score = 0
+        self.level_elapsed_ms = 0
         self.remaining_time_ms = self.default_time_limit_ms
         self.game_state = "playing"
 
@@ -126,6 +129,9 @@ class GameEngine:
         self.score += collected
 
         self.remaining_time_ms = max(0, self.remaining_time_ms - dt_ms)
+        self.level_elapsed_ms += dt_ms
+
+        self.telemetry.update_best_score(self.score)
 
         if self.level.hits_spike(self.player.rect):
             self.game_state = "game_over"
@@ -134,6 +140,8 @@ class GameEngine:
 
         if previous_state == 'playing' and self.game_state in ('victory', 'game_over'):
             self.audio.play(self.game_state)
+            if self.game_state == 'victory':
+                self.telemetry.update_best_time(self.level_elapsed_ms)
 
         self.log_debug_state()
 
@@ -166,6 +174,7 @@ class GameEngine:
         self.ui.draw_timer(self.screen, self.remaining_time_ms)
         self.ui.draw_level(self.screen, self.current_level_index + 1, len(self.level_paths))
         self.ui.draw_audio_state(self.screen, self.audio.muted)
+        self.ui.draw_records(self.screen, self.telemetry.best_score, self.telemetry.best_time_ms)
 
         if self.game_state == "menu":
             self.ui.draw_menu_screen(self.screen)
