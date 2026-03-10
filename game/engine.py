@@ -9,9 +9,10 @@ from game.ui import UI
 
 
 class GameEngine:
-    def __init__(self):
+    def __init__(self, dev_mode: bool = False):
         pygame.init()
 
+        self.dev_mode = dev_mode
         self.screen_width = 800
         self.screen_height = 600
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
@@ -53,6 +54,11 @@ class GameEngine:
         self.player.clamp_to_screen(self.screen_width, self.level.ground_platform)
 
         self.score += self.player.collect_coins(self.level.coins)
+        self.log_debug_state()
+
+    def log_debug_state(self):
+        if not self.dev_mode:
+            return
 
         print(
             f"Velocity Y: {self.player.velocity_y}, "
