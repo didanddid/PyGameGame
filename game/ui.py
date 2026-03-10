@@ -15,12 +15,20 @@ class UI:
         text = self.font.render(f'Time: {seconds}', True, (255, 255, 255))
         screen.blit(text, (10, 45))
 
-
     def draw_level(self, screen: pygame.Surface, current_level: int, total_levels: int):
         text = self.font.render(f'Level: {current_level}/{total_levels}', True, (255, 255, 255))
         screen.blit(text, (10, 80))
 
+    def draw_menu_screen(self, screen: pygame.Surface):
+        self._draw_overlay(screen, "PGG", "Enter - Start | 1..9 - Select Level | Esc - Quit")
+
+    def draw_pause_screen(self, screen: pygame.Surface):
+        self._draw_overlay(screen, "Paused", "P/Esc - Resume | R - Restart Level")
+
     def draw_end_screen(self, screen: pygame.Surface, title: str, subtitle: str):
+        self._draw_overlay(screen, title, subtitle)
+
+    def _draw_overlay(self, screen: pygame.Surface, title: str, subtitle: str):
         overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 170))
         screen.blit(overlay, (0, 0))

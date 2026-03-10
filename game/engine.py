@@ -34,6 +34,7 @@ class GameEngine:
         self.current_level_index = 0
 
         self.load_level(self.current_level_index)
+        self.game_state = "menu"
 
     @staticmethod
     def resource_path(relative_path):
@@ -72,14 +73,28 @@ class GameEngine:
             if event.type == pygame.QUIT:
                 self.running = False
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_r and self.game_state in ("victory", "game_over"):
+                if event.key == pygame.K_ESCAPE:
+                    if self.game_state == "playing":
+                        self.game_state = "paused"
+                    elif self.game_state == "paused":
+                        self.game_state = "playing"
+                    elif self.game_state == "menu":
+                        self.running = False
+                elif event.key == pygame.K_RETURN and self.game_state == "menu":
+                    self.restart_level()
+                elif event.key == pygame.K_p and self.game_state in ("playing", "paused"):
+                    self.game_state = "paused" if self.game_state == "playing" else "playing"
+                elif event.key == pygame.K_r and self.game_state in ("victory", "game_over", "paused"):
                     self.restart_level()
                 elif event.key == pygame.K_n and self.game_state == "victory":
                     self.load_next_level()
                 elif pygame.K_1 <= event.key <= pygame.K_9:
                     requested_level = event.key - pygame.K_1
                     if requested_level < len(self.level_paths):
+                        was_menu = self.game_state == "menu"
                         self.load_level(requested_level)
+                        if was_menu:
+                            self.game_state = "menu"
 
     def update(self, dt_ms):
         if self.game_state != "playing":
@@ -135,7 +150,11 @@ class GameEngine:
         self.ui.draw_timer(self.screen, self.remaining_time_ms)
         self.ui.draw_level(self.screen, self.current_level_index + 1, len(self.level_paths))
 
-        if self.game_state == "victory":
+        if self.game_state == "menu":
+            self.ui.draw_menu_screen(self.screen)
+        elif self.game_state == "paused":
+            self.ui.draw_pause_screen(self.screen)
+        elif self.game_state == "victory":
             subtitle = "Press R to restart"
             if self.current_level_index + 1 < len(self.level_paths):
                 subtitle += " | Press N for next level"
