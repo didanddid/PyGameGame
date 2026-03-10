@@ -90,14 +90,19 @@ class GameEngine:
         self.player.handle_horizontal_input(keys)
         self.player.process_jump_input(keys, dt_ms)
 
+        self.level.update(dt_ms)
+
         self.player.apply_gravity()
-        self.player.resolve_vertical_collisions(self.level.air_platforms, self.level.ground_platform)
+        self.player.resolve_vertical_collisions(self.level.get_air_platforms(), self.level.ground_platform)
         self.player.clamp_to_screen(self.screen_width, self.level.ground_platform)
         self.player.refresh_grounding_timers()
         self.player.consume_buffered_jump()
 
         self.score += self.player.collect_coins(self.level.coins)
         self.remaining_time_ms = max(0, self.remaining_time_ms - dt_ms)
+
+        if self.level.hits_spike(self.player.rect):
+            self.game_state = "game_over"
 
         self.update_game_state()
         self.log_debug_state()
