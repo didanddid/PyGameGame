@@ -24,6 +24,20 @@ class UI:
         text = self.font.render(label, True, (255, 255, 255))
         screen.blit(text, (10, 115))
 
+
+    def draw_records(self, screen: pygame.Surface, best_score: int, best_time_ms: int | None):
+        if best_time_ms is None:
+            best_time_label = "--"
+        else:
+            best_time_label = f"{best_time_ms / 1000:.2f}s"
+
+        text = self.font.render(
+            f"Best score: {best_score} | Best time: {best_time_label}",
+            True,
+            (255, 255, 255),
+        )
+        screen.blit(text, (10, 150))
+
     def draw_menu_screen(self, screen: pygame.Surface):
         self._draw_overlay(screen, "PGG", "Enter - Start | 1..9 - Select Level | M - Mute | Esc - Quit")
 
