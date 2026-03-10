@@ -43,15 +43,17 @@ class GameEngine:
             if event.type == pygame.QUIT:
                 self.running = False
 
-    def update(self):
+    def update(self, dt_ms):
         keys = pygame.key.get_pressed()
 
         self.player.handle_horizontal_input(keys)
-        self.player.try_jump(keys)
+        self.player.process_jump_input(keys, dt_ms)
 
         self.player.apply_gravity()
         self.player.resolve_vertical_collisions(self.level.air_platforms, self.level.ground_platform)
         self.player.clamp_to_screen(self.screen_width, self.level.ground_platform)
+        self.player.refresh_grounding_timers()
+        self.player.consume_buffered_jump()
 
         self.score += self.player.collect_coins(self.level.coins)
         self.log_debug_state()
@@ -77,9 +79,9 @@ class GameEngine:
 
     def run(self):
         while self.running:
+            dt_ms = self.clock.tick(100)
             self.handle_events()
-            self.update()
+            self.update(dt_ms)
             self.render()
-            self.clock.tick(100)
 
         pygame.quit()

@@ -14,17 +14,44 @@ class Player:
         self.on_ground = False
         self.on_air_platform = False
 
+        self.coyote_time_ms = 100
+        self.jump_buffer_ms = 120
+        self.coyote_timer_ms = 0
+        self.jump_buffer_timer_ms = 0
+        self.prev_jump_pressed = False
+
     def handle_horizontal_input(self, keys):
         if keys[pygame.K_LEFT]:
             self.rect.x -= 5
         if keys[pygame.K_RIGHT]:
             self.rect.x += 5
 
-    def try_jump(self, keys):
-        if keys[pygame.K_SPACE] and (self.on_ground or self.on_air_platform):
+    def process_jump_input(self, keys, dt_ms):
+        jump_pressed = keys[pygame.K_SPACE]
+
+        if jump_pressed and not self.prev_jump_pressed:
+            self.jump_buffer_timer_ms = self.jump_buffer_ms
+
+        if not jump_pressed and self.prev_jump_pressed and self.velocity_y < 0:
+            self.velocity_y *= 0.5
+
+        self.prev_jump_pressed = jump_pressed
+
+        self.jump_buffer_timer_ms = max(0, self.jump_buffer_timer_ms - dt_ms)
+        self.coyote_timer_ms = max(0, self.coyote_timer_ms - dt_ms)
+
+        self.consume_buffered_jump()
+
+    def consume_buffered_jump(self):
+        if self.jump_buffer_timer_ms > 0 and self.can_jump():
             self.velocity_y = self.jump_strength
             self.on_ground = False
             self.on_air_platform = False
+            self.coyote_timer_ms = 0
+            self.jump_buffer_timer_ms = 0
+
+    def can_jump(self):
+        return self.on_ground or self.on_air_platform or self.coyote_timer_ms > 0
 
     def apply_gravity(self):
         self.velocity_y += self.gravity
@@ -63,6 +90,10 @@ class Player:
             self.rect.bottom = ground_platform.top
             self.velocity_y = 0
             self.on_ground = True
+
+    def refresh_grounding_timers(self):
+        if self.on_ground or self.on_air_platform:
+            self.coyote_timer_ms = self.coyote_time_ms
 
     def collect_coins(self, coins):
         collected = 0
