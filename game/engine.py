@@ -21,12 +21,12 @@ class GameEngine:
         player_image = pygame.image.load(self.resource_path('assets/player.png'))
         self.player = Player(player_image)
 
-        self.level = Level(self.screen_width, self.screen_height)
         self.ui = UI()
-
-        self.score = 0
         self.running = True
         self.clock = pygame.time.Clock()
+
+        self.time_limit_ms = 60_000
+        self.restart_level()
 
     @staticmethod
     def resource_path(relative_path):
@@ -38,12 +38,25 @@ class GameEngine:
 
         return os.path.join(base_path, relative_path)
 
+    def restart_level(self):
+        self.level = Level(self.screen_width, self.screen_height)
+        self.player.reset()
+        self.score = 0
+        self.remaining_time_ms = self.time_limit_ms
+        self.game_state = "playing"
+
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+                if self.game_state in ("victory", "game_over"):
+                    self.restart_level()
 
     def update(self, dt_ms):
+        if self.game_state != "playing":
+            return
+
         keys = pygame.key.get_pressed()
 
         self.player.handle_horizontal_input(keys)
@@ -56,7 +69,16 @@ class GameEngine:
         self.player.consume_buffered_jump()
 
         self.score += self.player.collect_coins(self.level.coins)
+        self.remaining_time_ms = max(0, self.remaining_time_ms - dt_ms)
+
+        self.update_game_state()
         self.log_debug_state()
+
+    def update_game_state(self):
+        if not self.level.coins:
+            self.game_state = "victory"
+        elif self.remaining_time_ms <= 0:
+            self.game_state = "game_over"
 
     def log_debug_state(self):
         if not self.dev_mode:
@@ -65,7 +87,9 @@ class GameEngine:
         print(
             f"Velocity Y: {self.player.velocity_y}, "
             f"On Ground: {self.player.on_ground}, "
-            f"On Air Platform: {self.player.on_air_platform}"
+            f"On Air Platform: {self.player.on_air_platform}, "
+            f"State: {self.game_state}, "
+            f"Time Left: {self.remaining_time_ms}"
         )
 
     def render(self):
@@ -74,6 +98,12 @@ class GameEngine:
         self.level.draw(self.screen)
         self.player.draw(self.screen)
         self.ui.draw_score(self.screen, self.score)
+        self.ui.draw_timer(self.screen, self.remaining_time_ms)
+
+        if self.game_state == "victory":
+            self.ui.draw_end_screen(self.screen, "Victory!", "Press R to restart")
+        elif self.game_state == "game_over":
+            self.ui.draw_end_screen(self.screen, "Game Over", "Press R to restart")
 
         pygame.display.flip()
 

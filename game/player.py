@@ -4,6 +4,7 @@ import pygame
 class Player:
     def __init__(self, image: pygame.Surface, start_pos=(100, 100)):
         self.image = image
+        self.start_pos = start_pos
         self.rect = self.image.get_rect()
         self.rect.topleft = start_pos
 
@@ -16,6 +17,15 @@ class Player:
 
         self.coyote_time_ms = 100
         self.jump_buffer_ms = 120
+        self.coyote_timer_ms = 0
+        self.jump_buffer_timer_ms = 0
+        self.prev_jump_pressed = False
+
+    def reset(self):
+        self.rect.topleft = self.start_pos
+        self.velocity_y = 0
+        self.on_ground = False
+        self.on_air_platform = False
         self.coyote_timer_ms = 0
         self.jump_buffer_timer_ms = 0
         self.prev_jump_pressed = False
